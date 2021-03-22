@@ -1,45 +1,12 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import './App.css';
 import InfiniteScroll from 'react-infinite-scroll-component';
+import useFetchData from './hooks/useFetchData';
 
 const accessKey = process.env.REACT_APP_UNSPLASH_ACCESS_KEY;
 
 export default function App() {
-	const [images, setImages] = useState([]);
-	const [page, setPage] = useState(1);
-	const [query, setQuery] = useState('');
-
-	const getPhotos = useCallback(() => {
-		let apiUrl = `https://api.unsplash.com/photos?`;
-		if (query) {
-			apiUrl = `https://api.unsplash.com/search/photos?query=${query}`;
-		}
-		apiUrl += `&client_id=${accessKey}`;
-		apiUrl += `&page=${page}`;
-
-		fetch(apiUrl)
-			.then((res) => res.json())
-			.then((data) => {
-				const imagesFromApi = data.results ?? data;
-				if (page === 1) {
-					setImages(imagesFromApi);
-				} else {
-					setImages((images) => [
-						...new Set([...images, ...imagesFromApi]),
-					]);
-				}
-			});
-	}, [page, query]);
-
-	const searchPhotos = (e) => {
-		e.preventDefault();
-		setPage(1);
-		setQuery(e.target[0].value);
-	};
-
-	useEffect(() => {
-		getPhotos();
-	}, [getPhotos]);
+	const { images, setPage, searchPhotos } = useFetchData(accessKey);
 
 	if (!accessKey) {
 		return (
@@ -59,7 +26,7 @@ export default function App() {
 			</form>
 
 			<InfiniteScroll
-				dataLength={images.length} //This is important field to render the next data
+				dataLength={images.length}
 				next={() => {
 					setPage((page) => page + 1);
 				}}
