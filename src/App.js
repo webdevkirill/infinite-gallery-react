@@ -7,16 +7,35 @@ const accessKey = process.env.REACT_APP_UNSPLASH_ACCESS_KEY;
 export default function App() {
 	const [images, setImages] = useState([]);
 	const [page, setPage] = useState(1);
+	const [query, setQuery] = useState('');
 
 	const getPhotos = useCallback(() => {
-		fetch(
-			`https://api.unsplash.com/photos?client_id=${accessKey}&page=${page}`
-		)
+		let apiUrl = `https://api.unsplash.com/photos?`;
+		if (query) {
+			apiUrl = `https://api.unsplash.com/search/photos?query=${query}`;
+		}
+		apiUrl += `&client_id=${accessKey}`;
+		apiUrl += `&page=${page}`;
+
+		fetch(apiUrl)
 			.then((res) => res.json())
 			.then((data) => {
-				setImages((images) => [...images, ...data]);
+				const imagesFromApi = data.results ?? data;
+				if (page === 1) {
+					setImages(imagesFromApi);
+				} else {
+					setImages((images) => [
+						...new Set([...images, ...imagesFromApi]),
+					]);
+				}
 			});
-	}, [page]);
+	}, [page, query]);
+
+	const searchPhotos = (e) => {
+		e.preventDefault();
+		setPage(1);
+		setQuery(e.target[0].value);
+	};
 
 	useEffect(() => {
 		getPhotos();
@@ -34,7 +53,7 @@ export default function App() {
 		<div className='app'>
 			<h1>Бесконечная галерея Unsplash</h1>
 
-			<form>
+			<form onSubmit={searchPhotos}>
 				<input type='text' placeholder='Поиск в Unsplash...' />
 				<button>Найти</button>
 			</form>
